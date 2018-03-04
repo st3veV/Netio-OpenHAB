@@ -1,0 +1,47 @@
+Group Netio "Netio" (All)
+
+String NetioInput (Netio) {mqtt="<[mosquitto:devices/netio/messages/events/:state:default]"}
+String NetioOutput (Netio) {mqtt=">[mosquitto:devices/netio/messages/devicebound/:command:*:default]"}
+Group:Switch:OR(ON,OFF) GNetioSwitches (Netio)
+
+Group Netio_Global "Global" (Netio)
+Number Netio_Global_Voltage           "Voltage [%.2f V]" (Netio_Global)
+Number Netio_Global_Frequency         "Frequency [%.2f Hz]" (Netio_Global)
+Number Netio_Global_Current           "Current [%.2f mA]" (Netio_Global)
+Number Netio_Global_PowerFactor       "Power factor [%.2f]" (Netio_Global)
+Number Netio_Global_Load              "Total load [%.2f W]" (Netio_Global)
+Number Netio_Global_Energy            "Total energy [%.2f Wh]" (Netio_Global)
+Number Netio_Global_Switch            "Global switch" (Netio_Global)
+Number Netio_Global_ChartShown        (Netio_Global)
+
+Group Netio_Outlet_1 "Outlet 1" (Netio)
+Switch Netio_Outlet_1_State           "State" <switch> (Netio_Outlet_1,GNetioSwitches)
+Number Netio_Outlet_1_Current         "Current [%.2f mA]" (Netio_Outlet_1)
+Number Netio_Outlet_1_PowerFactor     "Power factor [%.2f]" (Netio_Outlet_1)
+Number Netio_Outlet_1_Load            "Load [%.2f W]" (Netio_Outlet_1)
+Number Netio_Outlet_1_Energy          "Energy [%.2f Wh]" (Netio_Outlet_1)
+Number Netio_Outlet_1_ChartShown      (Netio_Outlet_1)
+
+Group Netio_Outlet_2 "Outlet 2" (Netio)
+Switch Netio_Outlet_2_State           "State" <switch> (Netio_Outlet_2,GNetioSwitches)
+Number Netio_Outlet_2_Current         "Current [%.2f mA]" (Netio_Outlet_2)
+Number Netio_Outlet_2_PowerFactor     "Power factor [%.2f]" (Netio_Outlet_2)
+Number Netio_Outlet_2_Load            "Load [%.2f W]" (Netio_Outlet_2)
+Number Netio_Outlet_2_Energy          "Energy [%.2f Wh]" (Netio_Outlet_2)
+Number Netio_Outlet_2_ChartShown      (Netio_Outlet_2)
+
+Group Netio_Outlet_3 "Outlet 3" (Netio)
+Switch Netio_Outlet_3_State           "State" <switch> (Netio_Outlet_3,GNetioSwitches)
+Number Netio_Outlet_3_Current         "Current [%.2f mA]" (Netio_Outlet_3)
+Number Netio_Outlet_3_PowerFactor     "Power factor [%.2f]" (Netio_Outlet_3)
+Number Netio_Outlet_3_Load            "Load [%.2f W]" (Netio_Outlet_3)
+Number Netio_Outlet_3_Energy          "Energy [%.2f Wh]" (Netio_Outlet_3)
+Number Netio_Outlet_3_ChartShown      (Netio_Outlet_3)
+
+Group Netio_Outlet_4 "Outlet 4" (Netio)
+Switch Netio_Outlet_4_State           "State" <switch> (Netio_Outlet_4,GNetioSwitches)
+Number Netio_Outlet_4_Current         "Current [%.2f mA]" (Netio_Outlet_4)
+Number Netio_Outlet_4_PowerFactor     "Power factor [%.2f]" (Netio_Outlet_4)
+Number Netio_Outlet_4_Load            "Load [%.2f W]" (Netio_Outlet_4)
+Number Netio_Outlet_4_Energy          "Energy [%.2f Wh]" (Netio_Outlet_4)
+Number Netio_Outlet_4_ChartShown      (Netio_Outlet_4)

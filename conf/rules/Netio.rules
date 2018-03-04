@@ -1,0 +1,210 @@
+
+val String LOG = "Netio"
+
+val String OUTLET_ITEM = "Netio_Outlet_"
+val String GLOBAL_ITEM = "Netio_Global"
+
+val String STATE_ITEM = "_State"
+val String CHART_SHOWN_ITEM = "_ChartShown"
+
+val OUTLET_JSON_TO_OUTLET = newHashMap(
+    "Current" -> "_Current",
+    "PowerFactor" -> "_PowerFactor",
+    "Load" -> "_Load",
+    "Energy" -> "_Energy"
+)
+
+val GLOBAL_JSON_TO_OUTLET = newHashMap(
+    "Voltage" -> "_Voltage",
+    "Frequency" -> "_Frequency",
+    "TotalCurrent" -> "_Current",
+    "OverallPowerFactor" -> "_PowerFactor",
+    "TotalLoad" -> "_Load",
+    "TotalEnergy" -> "_Energy"
+)
+
+var OUTLET_STATES = newHashMap
+var OUTLET_GROUPS = newHashMap
+var OUTLET_SWITCHES = newHashMap
+
+val IDS = newArrayList(1, 2, 3, 4)
+
+val UPDATE_MSG_BEGIN = "{\"Operation\":\"SetOutputs\",\"Outputs\": ["
+val UPDATE_MSG_END = "]}"
+
+var long last_update = 0
+val MIN_DELAY = 2000 //ms
+
+rule "Update temporay storage with states"
+when
+    System started
+then
+    logInfo(LOG, "Caching switches, groups and values")
+    IDS.forEach[ int id |
+        val GroupItem group = Netio.members.findFirst[name.equals(OUTLET_ITEM + id)] as GroupItem
+        OUTLET_GROUPS.put(id, group)
+        val n = OUTLET_ITEM + id + STATE_ITEM
+        val SwitchItem sw = GNetioSwitches.members.findFirst[name.equals(n)] as SwitchItem
+        if(sw == null) logInfo(LOG, "Something bad happened with id: " + id)
+        else logInfo(LOG, "Got: " + sw)
+        
+        OUTLET_SWITCHES.put(id, sw)
+        OUTLET_STATES.put(id, sw.state.toString)
+        val SwitchItem item = OUTLET_SWITCHES.get(id) as SwitchItem
+        logInfo(LOG, item.name + ": " + item.state.toString)
+
+        // reset chart visibility to be 0 (everything is hidden)
+        val vName = OUTLET_ITEM + id + CHART_SHOWN_ITEM
+        logInfo(LOG,"Chart shown: " + vName)
+        val NumberItem chartShown = group.members.findFirst[name.equals(vName)] as NumberItem
+        if(chartShown == null) logInfo(LOG, "Something bad happened to: " + vName)
+        else logInfo(LOG,"Got: " + chartShown)
+
+        chartShown.postUpdate(0)
+    ]
+    
+    last_update = now().getMillis()
+    logInfo(LOG, "Done - " + last_update)
+end
+
+rule "Parse incoming message"
+when
+    Item NetioInput received update
+then
+
+    // last value that is set during initialization so be sure the system is initialized
+    if(last_update != 0)
+    {
+
+        val jsonInput = NetioInput.state.toString
+
+        // CHECK STATES ONLY
+        OUTLET_SWITCHES.forEach[ int id, SwitchItem item |
+            val nodeName = "$.Outputs[?(@.ID=="+id+")].State"
+            val outletState = transform("JSONPATH", nodeName, jsonInput)
+            //logInfo(LOG, "nodeName: " + nodeName + ",outletState: " + outletState)
+            if(outletState != null && outletState != "" && outletState != "[]"){
+                val v = transform("MAP", "onOff.map", outletState.replace("[","").replace("]",""))
+                if(v != OUTLET_STATES.get(id))
+                {
+                    OUTLET_STATES.put(id, v)
+                    item.postUpdate(v)
+                }
+            }
+        ]
+
+        // UPDATE THE REST ONLY EVERY TWO SECONDS
+        val epoch = now().getMillis()
+        val diff = epoch - last_update
+        if(diff > MIN_DELAY)
+        {
+            last_update = epoch
+
+            // TRY PARSING GLOBAL MEASURE
+
+            val globalMeasureNodeName = "$.GlobalMeasure"
+            val globalMeasure = transform("JSONPATH", globalMeasureNodeName, jsonInput)
+            if(globalMeasure != null && globalMeasure.length > 0)
+            {
+                // update global measure
+                //logInfo(LOG, "Global measure: \n" + globalMeasure)
+                GLOBAL_JSON_TO_OUTLET.forEach[ String json, String outlet |
+                    val item = Netio_Global.members.findFirst[name.equals(GLOBAL_ITEM + outlet)]
+                    if(item != null)
+                    {
+                        val value = transform(
+                            "JSONPATH",
+                            globalMeasureNodeName + "." + json,
+                            jsonInput
+                        )
+                        if(value != null)
+                        {
+                            // everything are numbers so they need conversion
+                            item.postUpdate(new DecimalType(value))
+                        }
+                    }
+                ]
+            }
+
+            // TRY PARSING ITEMS
+            OUTLET_GROUPS.forEach[ int id, GroupItem group |
+                val nodeName = "$.Outputs[?(@.ID=="+id+")]"
+                val outlet = transform("JSONPATH", nodeName, jsonInput) //transformed String - "[<object>]"
+                if(outlet != null && outlet.length > 2) // not null and longer than empty brackets
+                {
+                    OUTLET_JSON_TO_OUTLET.forEach[ String json, String outlet | 
+                        var value = transform(
+                            "JSONPATH",
+                            nodeName + "." + json,
+                            jsonInput
+                        )
+                        val item = group.members.findFirst[name.equals(OUTLET_ITEM + id + outlet)]
+                        
+                        if(item != null && value != null)
+                        {
+                            value = value.replace("[","").replace("]","")
+                            // everything are numbers so they need conversion
+                            item.postUpdate(new DecimalType(value))
+                        }
+                        else
+                        {
+                            logInfo(LOG, OUTLET_ITEM + id + outlet + " doesn't exist")
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+end
+
+rule "Produce control output"
+when
+    Item GNetioSwitches received update
+then
+    // find sockets that have different value than the one that is saved locally
+    val updates = IDS.map[ int id |
+        val SwitchItem sw = OUTLET_SWITCHES.get(id)
+        if(sw != null && sw.state.toString != OUTLET_STATES.get(id))
+            "{\"ID\":" + id + ", \"Action\":" + transform("MAP", "onOff.map", sw.state.toString) + "}"
+        else null
+    ].filterNull().join(",")
+
+    if(updates != "") {
+        val msg = UPDATE_MSG_BEGIN + updates + UPDATE_MSG_END
+        logInfo(LOG, "Group updated -> message to netio: " + msg)
+        NetioOutput.sendCommand(msg)
+    }
+
+    // turn off chart visibility for item that are OFF
+    IDS.filter[int id |
+        val SwitchItem sw = OUTLET_SWITCHES.get(id)
+        return sw != null && sw.state == OFF && sw.state.toString != OUTLET_STATES.get(id)
+    ].forEach[int id |
+        // reset chart visibility to be 0 (everything is hidden)
+        val vName = OUTLET_ITEM + id + CHART_SHOWN_ITEM
+        val GroupItem group = OUTLET_GROUPS.get(id) as GroupItem
+        val NumberItem chartShown = group.members.findFirst[name.equals(vName)] as NumberItem
+        if(chartShown != null && chartShown.state != 0){
+            chartShown.postUpdate(0)
+        }
+    ]
+end
+
+rule "Netio global switch"
+when 
+    Item Netio_Global_Switch received update
+then
+    val DecimalType state = Netio_Global_Switch.state as DecimalType
+    if(state == 0 || state == 1)
+    {
+        // update all sockets to same global value
+        val updates = IDS.map[ int id |
+            "{\"ID\":" + id + ", \"Action\":" + state + "}"
+        ].join(",")
+
+        val msg = UPDATE_MSG_BEGIN + updates + UPDATE_MSG_END
+        logInfo(LOG, "Global switch change -> message to netio: " + msg)
+        NetioOutput.sendCommand(msg)
+        Netio_Global_Switch.postUpdate(2)
+    }
+end

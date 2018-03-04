@@ -1,0 +1,63 @@
+sitemap Netio label="Netio 4 All" {
+    Frame label="Global control" {
+        Switch item=Netio_Global_Switch label="Global switch" mappings=[1="All ON", 0="All OFF"]
+    }
+    Frame label="Outlet controls" {
+        Default item=Netio_Outlet_1_State icon="poweroutlet" label="Outlet 1"
+        Default item=Netio_Outlet_2_State icon="poweroutlet" label="Outlet 2"
+        Default item=Netio_Outlet_3_State icon="poweroutlet" label="Outlet 3"
+        Default item=Netio_Outlet_4_State icon="poweroutlet" label="Outlet 4"
+    }
+    Frame label="Global measure" {
+        Default item=Netio_Global_Voltage
+        Default item=Netio_Global_Frequency
+        Default item=Netio_Global_Current
+        Default item=Netio_Global_PowerFactor
+        Default item=Netio_Global_Load
+        Default item=Netio_Global_Energy
+        Switch item=Netio_Global_ChartShown label="Load Chart" mappings=[0="Hide", 1="Hour", 2="Day", 3="Week"]
+        Chart item=Netio_Global_Load label="Load" period=h service="mysql" visibility=[Netio_Global_ChartShown == 1]
+        Chart item=Netio_Global_Load label="Load" period=D service="mysql" visibility=[Netio_Global_ChartShown == 2]
+        Chart item=Netio_Global_Load label="Load" period=W service="mysql" visibility=[Netio_Global_ChartShown == 3]
+    }
+    Frame label="Outlet 1" icon="poweroutlet" visibility=[Netio_Outlet_1_State == ON] {
+        Default item=Netio_Outlet_1_Current
+        Default item=Netio_Outlet_1_PowerFactor
+        Default item=Netio_Outlet_1_Load
+        Default item=Netio_Outlet_1_Energy
+        Switch item=Netio_Outlet_1_ChartShown label="Load Chart" mappings=[0="Hide", 1="Hour", 2="Day", 3="Week"]
+        Chart item=Netio_Outlet_1_Load label="Load" period=h service="mysql" visibility=[Netio_Outlet_1_ChartShown == 1]
+        Chart item=Netio_Outlet_1_Load label="Load" period=D service="mysql" visibility=[Netio_Outlet_1_ChartShown == 2]
+        Chart item=Netio_Outlet_1_Load label="Load" period=W service="mysql" visibility=[Netio_Outlet_1_ChartShown == 3]
+    }
+    Frame label="Outlet 2" icon="poweroutlet" visibility=[Netio_Outlet_2_State == ON] {
+        Default item=Netio_Outlet_2_Current
+        Default item=Netio_Outlet_2_PowerFactor
+        Default item=Netio_Outlet_2_Load
+        Default item=Netio_Outlet_2_Energy
+        Switch item=Netio_Outlet_2_ChartShown label="Load Chart" mappings=[0="Hide", 1="Hour", 2="Day", 3="Week"]
+        Chart item=Netio_Outlet_2_Load label="Load" period=h service="mysql" visibility=[Netio_Outlet_2_ChartShown == 1]
+        Chart item=Netio_Outlet_2_Load label="Load" period=D service="mysql" visibility=[Netio_Outlet_2_ChartShown == 2]
+        Chart item=Netio_Outlet_2_Load label="Load" period=W service="mysql" visibility=[Netio_Outlet_2_ChartShown == 3]
+    }
+    Frame label="Outlet 3" icon="poweroutlet" visibility=[Netio_Outlet_3_State == ON] {
+        Default item=Netio_Outlet_3_Current
+        Default item=Netio_Outlet_3_PowerFactor
+        Default item=Netio_Outlet_3_Load
+        Default item=Netio_Outlet_3_Energy
+        Switch item=Netio_Outlet_3_ChartShown label="Load Chart" mappings=[0="Hide", 1="Hour", 2="Day", 3="Week"]
+        Chart item=Netio_Outlet_3_Load label="Load" period=h service="mysql" visibility=[Netio_Outlet_3_ChartShown == 1]
+        Chart item=Netio_Outlet_3_Load label="Load" period=D service="mysql" visibility=[Netio_Outlet_3_ChartShown == 2]
+        Chart item=Netio_Outlet_3_Load label="Load" period=W service="mysql" visibility=[Netio_Outlet_3_ChartShown == 3]
+    }
+    Frame label="Outlet 4" icon="poweroutlet" visibility=[Netio_Outlet_4_State == ON] {
+        Default item=Netio_Outlet_4_Current
+        Default item=Netio_Outlet_4_PowerFactor
+        Default item=Netio_Outlet_4_Load
+        Default item=Netio_Outlet_4_Energy
+        Switch item=Netio_Outlet_4_ChartShown label="Load Chart" mappings=[0="Hide", 1="Hour", 2="Day", 3="Week"]
+        Chart item=Netio_Outlet_4_Load label="Load" period=h service="mysql" visibility=[Netio_Outlet_4_ChartShown == 1]
+        Chart item=Netio_Outlet_4_Load label="Load" period=D service="mysql" visibility=[Netio_Outlet_4_ChartShown == 2]
+        Chart item=Netio_Outlet_4_Load label="Load" period=W service="mysql" visibility=[Netio_Outlet_4_ChartShown == 3]
+    }
+}
